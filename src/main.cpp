@@ -28,6 +28,8 @@ const int MQTT_SERVER_PORT = 1883;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+uint8_t current_speed = 30; // Default speed
+
 
 void callback(char* topic, byte* payload, unsigned int length) {
 
@@ -63,7 +65,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
         analogWrite(FAN_PWM_PIN, 200);
         digitalWrite(RELAY_PIN, 0);     // Turn on the relay
         delay(750);
-        analogWrite(FAN_PWM_PIN, 30);   // "Normal" IDLE speed
+        analogWrite(FAN_PWM_PIN, current_speed);   // "Normal" IDLE speed
         return;
     }
 
@@ -102,8 +104,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
         return;
     }
 
-    // Set the fan speed
-    analogWrite(FAN_PWM_PIN, speed);
+    // Set the fan 
+    current_speed = speed;
+    analogWrite(FAN_PWM_PIN, current_speed);
 
 }
 
@@ -141,7 +144,7 @@ void setup() {
 
     pinMode(FAN_PWM_PIN, OUTPUT);
     pinMode(RELAY_PIN, OUTPUT);
-    analogWrite(FAN_PWM_PIN, 30);
+    analogWrite(FAN_PWM_PIN, current_speed);
     digitalWrite(RELAY_PIN, 1); // On startup, the relay is off
 
     // Since this project is meant to be used with ESP8266, we can use the
