@@ -1,5 +1,12 @@
-#include <Arduino.h>
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+#endif // ESP8266
+#ifdef ESP32 
+#include <WiFi.h>
+#endif // ESP32
 #include <PubSubClient.h>
 
 
@@ -79,6 +86,7 @@ void reconnect() {
 
             // Tell that we are online
             client.publish("status", "online");
+            client.publish("version", "0.1");
 
             // Subscribe to the control topic to receive commands
             // from the server to control the fan speed
@@ -99,11 +107,18 @@ void setup() {
     pinMode(FAN_PWM_PIN, OUTPUT);
     analogWrite(FAN_PWM_PIN, 30);
 
+    // Since this project is meant to be used with ESP8266, we can use the
+    // ESP32 to check if this is compiled for simulation therefore requiring
+    // to use Wokwi guest network
+    #ifdef ESP8266
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
+    #else
+    WiFi.begin("Wokwi-GUEST", "", 6);
+    #endif // ESP8266
+    // Wait for connection
     while (WiFi.status() != WL_CONNECTED) {
-        Serial.println("Connecting to WiFi..");
         delay(500);
+        Serial.println("Connecting to network...");
     }
 
     Serial.println("Connected to the WiFi network");
@@ -112,9 +127,21 @@ void setup() {
 
     client.setCallback(callback);
 
+
+    #ifdef ESP8266
+    ArduinoOTA.setHostname("ceilingfan-4f3e8b59");
+    // ArduinoOTA.setPassword((const char *)"qwerty");
+    ArduinoOTA.begin();
+    #endif // ESP8266
+
 }
 
 void loop() {
+
+    #ifdef ESP8266
+    ArduinoOTA.handle();
+    #endif // ESP8266
+
 
     if (!client.connected()) {
         reconnect();
