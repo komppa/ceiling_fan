@@ -8,6 +8,7 @@
 #include <WiFi.h>
 #endif // ESP32
 #include <PubSubClient.h>
+#include <EEPROM.h>
 
 
 // Fan control pin. 16 is D0 on esp8266. Also blinks the onboard LED.
@@ -29,6 +30,7 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 uint8_t current_speed = 30; // Default speed
+uint8_t is_on = 1; // Is the fan on? By default its off
 
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -39,7 +41,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print("  payload: ");
     Serial.println("");
 
-    for (int i = 0; i < length; i++) {
+    for (int i = 0; i < (int)length; i++) {
         Serial.print((char)payload[i]);
     }
 
@@ -61,6 +63,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
         )
     ) {
         Serial.println("Turning on");
+
+        EEPROM.write(2, 0);
+        EEPROM.commit();
+
         // Turn on the fan with a speed burst to get it started
         analogWrite(FAN_PWM_PIN, 200);
         digitalWrite(RELAY_PIN, 0);     // Turn on the relay
@@ -77,13 +83,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
         )
     ) {
         Serial.println("Turning off");
+
+        EEPROM.write(2, 1);
+        EEPROM.commit();
+
         digitalWrite(RELAY_PIN, 1);
         return;
     }
 
 
     // Check if the payload is a number
-    for (int i = 0; i < length; i++) {
+    for (int i = 0; i < (int)length; i++) {
         if (payload[i] < '0' || payload[i] > '9') {
             Serial.println("Invalid payload");
             return;
@@ -106,6 +116,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     // Set the fan 
     current_speed = speed;
+    EEPROM.write(1, current_speed);
+    EEPROM.commit();
     analogWrite(FAN_PWM_PIN, current_speed);
 
 }
@@ -142,10 +154,23 @@ void setup() {
 
     Serial.begin(9600);
 
+    EEPROM.begin(512);
+
+    if (EEPROM.read(0) != 42) {
+        // Init EEPROM
+        EEPROM.write(0, 42);
+        EEPROM.write(1, current_speed);
+        EEPROM.write(2, 0);             // Is my fan on? 0 = off, 1 = on
+        EEPROM.commit();
+    } else {
+        current_speed = EEPROM.read(1);
+        is_on = EEPROM.read(2) == 1 ? 1 : 0;
+    }
+
     pinMode(FAN_PWM_PIN, OUTPUT);
     pinMode(RELAY_PIN, OUTPUT);
     analogWrite(FAN_PWM_PIN, current_speed);
-    digitalWrite(RELAY_PIN, 1); // On startup, the relay is off
+    digitalWrite(RELAY_PIN, is_on);
 
     // Since this project is meant to be used with ESP8266, we can use the
     // ESP32 to check if this is compiled for simulation therefore requiring
