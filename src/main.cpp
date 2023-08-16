@@ -164,7 +164,8 @@ void setup() {
         EEPROM.commit();
     } else {
         current_speed = EEPROM.read(1);
-        is_on = EEPROM.read(2) == 1 ? 1 : 0;
+        // Ensure that unknown value means that the fan is off
+        is_on = EEPROM.read(2) == 0 ? 0 : 1;
     }
 
     pinMode(FAN_PWM_PIN, OUTPUT);
