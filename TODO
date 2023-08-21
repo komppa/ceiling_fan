@@ -1,0 +1,4 @@
+- do not ramp up fan so hard (smoothen it out)
+- device should have own topic prefix (like /ceilingfan-12345678/online -> true)
+- there should be possibility to set max fan speed via MQTT and save that into the EEPROM becuase there might be power supplies used that do not give enough current
+- random generate device ID and save it to EEPROM
