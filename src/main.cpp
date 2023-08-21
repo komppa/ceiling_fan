@@ -17,15 +17,6 @@ const int FAN_PWM_PIN = 16;
 // Relay control pin. 5 is D1 on esp8266.
 const int RELAY_PIN = 5;
 
-// WIFI credentials
-const char* WIFI_SSID = "";
-const char* WIFI_PASSWORD = "";
-
-// MQTT server address and port
-const char* MQTT_SERVER_ADDRESS = "";
-const int MQTT_SERVER_PORT = 1883;
-
-
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -136,7 +127,7 @@ void reconnect() {
 
             // Tell that we are online
             client.publish("status", "online");
-            client.publish("version", "0.2");
+            client.publish("version", "0.3");
 
             // Subscribe to the control topic to receive commands
             // from the server to control the fan speed
@@ -184,12 +175,12 @@ void setup() {
     // Wait for connection
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-        Serial.println("Connecting to network...");
+        Serial.println("Connecting to network..." + String(WIFI_SSID) + ":::" + String(WIFI_PASSWORD));
     }
 
     Serial.println("Connected to the WiFi network");
 
-    client.setServer(MQTT_SERVER_ADDRESS, MQTT_SERVER_PORT);
+    client.setServer(MQTT_SERVER_ADDRESS, 1883);
 
     client.setCallback(callback);
 
